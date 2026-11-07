@@ -2,22 +2,27 @@
 
 给 FongMi 用的单站点源脚本，全部走站点 JSON 接口（列表/详情/播放），不解析网页，源站前端改版不影响。
 
+配置里除黄果本站外，还挂了 12 个 🔞 线路站（`type: 1` 的 JSON 接口站，来自 `uzVideo/video_sources_sese.json`），和黄果脚本互不影响：黄果仍是第一个站点（默认打开），🔞 站点按 `sese_*` 独立 key 追加在后面，可在「站点」里切换，或在详情页/播放页用「换源」跨站找片。
+
 分类顺序对齐网页端导航：AI短剧 / AI漫剧 / 换脸专区 / 魔改专区（这四个带排序筛选）→ 吃瓜·全部 / 吃瓜·热门 / 吃瓜·AI原创 → 热播榜 / 推荐榜 / 潜力榜 → 加载源时自动追加的「专题·XX」（目前 9 个专辑专题）。
 
 ## 客户端用法
 
-配置地址（锁定 v5）：
+配置地址（锁定 v6）：
 
 ```
-https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v5/huangguo_web_spider_config.json
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v6/huangguo_web_spider_config.json
 ```
 
 前提：安卓 + FongMi + 已启用 QuickJS 模组（设置 → 模组）。
 
+切换源：首页/设置里改「站点」可切到任意 🔞 线路站；看片时在详情页点「换源」或播放页点「线路 / 换源」跨站搜索同名影片。
+
 ## 文件
 
 - `huangguo_web_spider.js` — 爬虫脚本，入口常量 `API` 在第 15 行、站点常量 `SITE` 在第 16 行
-- `huangguo_web_spider_config.json` — 单站点配置，`api` 指向本仓库某个 tag 的脚本
+- `huangguo_web_spider_config.json` — 站点配置：第一个是黄果本站（`type: 3`，`api` 指向本仓库某个 tag 的脚本），后面 12 个是 🔞 `type: 1` JSON 接口站，可以整段删掉，不影响黄果
+- 🔞 站点清单（`sese_*`）：老鸭 / 淫水机 / 番号 / 155 / 鸡坤 / 黄AV / 香奶儿 / 美少女 / 白嫖 / 乐播 / 滴滴 / 精品。原始列表里同一站的 `/provide/vod/` 与 `/at/json` 两条内容重复，这里只留一条，避免站点列表里出现两个一模一样的名字
 
 ## 首页推荐位
 
@@ -71,5 +76,5 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v5/huangguo_web_spider_config
 - 每次都换新 tag 名，不要删掉重发同名 tag：jsdelivr 对 tag 内容近乎永久缓存，同名复用会一直拿到旧内容
 - 不要用 `@main` 当长期地址：分支缓存约 12 小时，改完不能立刻生效
 - 仓库必须保持 Public，jsdelivr 只服务公开仓库
-- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认 `v5`
+- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认 `v6`
 - 源站与 Worker 域名在部分网络下被污染，不开代理客户端会连不上数据源
