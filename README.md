@@ -2,27 +2,28 @@
 
 给 FongMi 用的单站点源脚本，全部走站点 JSON 接口（列表/详情/播放），不解析网页，源站前端改版不影响。
 
-分类顺序对齐网页端导航：精选推荐 → AI短剧 / AI漫剧 / 换脸专区 / 魔改专区（这四个带排序筛选）→ 吃瓜·全部 / 吃瓜·热门 / 吃瓜·AI原创 → 热播榜 / 推荐榜 / 潜力榜 → 加载源时自动追加的「专题·XX」（目前 9 个专辑专题）。
+分类顺序对齐网页端导航：AI短剧 / AI漫剧 / 换脸专区 / 魔改专区（这四个带排序筛选）→ 吃瓜·全部 / 吃瓜·热门 / 吃瓜·AI原创 → 热播榜 / 推荐榜 / 潜力榜 → 加载源时自动追加的「专题·XX」（目前 9 个专辑专题）。
 
 ## 客户端用法
 
-配置地址（锁定 v4）：
+配置地址（锁定 v5）：
 
 ```
-https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v4/huangguo_web_spider_config.json
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v5/huangguo_web_spider_config.json
 ```
 
 前提：安卓 + FongMi + 已启用 QuickJS 模组（设置 → 模组）。
 
 ## 文件
 
-- `huangguo_web_spider.js` — 爬虫脚本，入口常量 `API` 在第 12 行、站点常量 `SITE` 在第 13 行
+- `huangguo_web_spider.js` — 爬虫脚本，入口常量 `API` 在第 15 行、站点常量 `SITE` 在第 16 行
 - `huangguo_web_spider_config.json` — 单站点配置，`api` 指向本仓库某个 tag 的脚本
 
-## 精选推荐
+## 首页推荐位
 
 - 网页端 `/api/category/recommend` 是坏的（返回 `total=0`），推荐内容只在 `/api/all` 的 `sections.recommend` 里
-- 「精选推荐」分类和首页推荐位都走 `/api/all`，一次拿 12 条
+- 首页推荐位（客户端打开站点时的第一屏）走 `/api/all` 的 `sections.recommend`，一次 12 条
+- 不再单独做「精选推荐」分类：它和首页推荐位同源，客户端里内容会重复（v5 已删）
 
 ## 排序筛选（含独家原创）
 
@@ -40,9 +41,9 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v4/huangguo_web_spider_config
 ## 吃瓜板块
 
 - 列表接口 `/api/chigua?cate=all|remen|yuanchuang`，对应三个分类
-- 条目 id 形如 `archives_xxx`，直链不在 `/api/play` 里，先试 `/api/detail` 的 `episodes[0].url`
-- 详情抓不到时回退：读站点 `/api/posts/{pid}` 的正文，里面常有「作品名称：《xxx》」链接指向 `/video/{id}`，用这个 id 再走 `/api/play`
-- 纯图文帖没有正片链接，播放仍会为空，这是帖子本身没有视频
+- 条目 id 形如 `archives_xxx`，直链不在 `/api/play` 里
+- 播放顺序：先试 `/api/detail` 的 `episodes[0].url` → 再读站点 `/api/posts/{pid}` 的 `video_url`（已签名的 m3u8，自带 `auth_key`，可直接播；去掉 query 会 403）→ 最后才退回正文里的 `/video/{id}` 再走 `/api/play`
+- 纯图文帖既没有 `video_url` 也没有 `/video/` 链接，播放仍会为空，这是帖子本身没有视频
 
 ## 搜索
 
@@ -61,14 +62,14 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v4/huangguo_web_spider_config
 ## 发新版本（改完脚本后照这个顺序做）
 
 1. 改脚本，提交到 `main`
-2. 把配置里的 `api` 改成新版本号，例如 `@v5`，提交到 `main`
-3. Releases → Draft a new release → 新 tag 填 `v5` → Publish
-4. 客户端配置地址改成 `...@v5/huangguo_web_spider_config.json`
+2. 把配置里的 `api` 改成新版本号，例如 `@v6`，提交到 `main`
+3. Releases → Draft a new release → 新 tag 填 `v6` → Publish
+4. 客户端配置地址改成 `...@v6/huangguo_web_spider_config.json`
 
 ## 注意
 
 - 每次都换新 tag 名，不要删掉重发同名 tag：jsdelivr 对 tag 内容近乎永久缓存，同名复用会一直拿到旧内容
 - 不要用 `@main` 当长期地址：分支缓存约 12 小时，改完不能立刻生效
 - 仓库必须保持 Public，jsdelivr 只服务公开仓库
-- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认 `v4`
+- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认 `v5`
 - 源站与 Worker 域名在部分网络下被污染，不开代理客户端会连不上数据源
