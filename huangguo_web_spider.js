@@ -16,7 +16,6 @@ let BASE = API;
 
 // 分类顺序大致对应网页端导航：全部剧集 → 排行榜 → 专辑专题 → 黄果吃瓜
 const CLASSES = [
-  { type_id: 'recommend',   type_name: '精选推荐' },
   { type_id: 'ai-duanju',   type_name: 'AI短剧' },
   { type_id: 'ai-manju',    type_name: 'AI漫剧' },
   { type_id: 'ai-huanlian', type_name: '换脸专区' },
