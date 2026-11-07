@@ -17,6 +17,15 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v2/huangguo_web_spider_config
 - `huangguo_web_spider.js` — 爬虫脚本，入口常量 `API` 在第 6 行
 - `huangguo_web_spider_config.json` — 单站点配置，`api` 指向本仓库某个 tag 的脚本
 
+## 来源与致谢
+
+本脚本的接口路径照着下面两个仓库的实现改写，没有它们就没有这份源：
+
+- **网页版前端**：[@DRDRDRRDDRDR/huangguo-web](https://github.com/DRDRDRRDDRDR/huangguo-web) —— 站点接口地址、跨域代理与解析 Worker 均出自这里
+- **原始 QuickJS 源**：[@jinshengchan/huangguo-fongmi](https://github.com/jinshengchan/huangguo-fongmi) —— 早期版本，靠抓网页取播放地址，源站改版后播放会失败
+
+站点内容版权归源站所有，本仓库只提供访问方式，请自行判断使用边界，不要传播内容。
+
 ## 发新版本（改完脚本后照这个顺序做）
 
 1. 改脚本，提交到 `main`
