@@ -2,13 +2,22 @@
   "sites": [
     {
       "key": "huangguo_web",
-      "name": "黄果影院（接口版）",
+      "name": "黄果短剧",
       "type": 3,
       "api": "https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v6/huangguo_web_spider.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
       "changeable": 0
+    },
+    {
+      "key": "jp98",
+      "name": "🔞JP98资源⭐",
+      "type": 1,
+      "api": "https://jp98.vip/api.php/provide/vod/",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1
     },
     {
       "key": "sese_xrbsp",
