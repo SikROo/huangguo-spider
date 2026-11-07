@@ -2,16 +2,16 @@
 
 给 FongMi 用的单站点源脚本，全部走站点 JSON 接口（列表/详情/播放），不解析网页，源站前端改版不影响。
 
-配置里除黄果本站外，还挂了 12 个 🔞 线路站（`type: 1` 的 JSON 接口站，来自 `uzVideo/video_sources_sese.json`），和黄果脚本互不影响：黄果仍是第一个站点（默认打开），🔞 站点按 `sese_*` 独立 key 追加在后面，可在「站点」里切换，或在详情页/播放页用「换源」跨站找片。
+配置里除黄果本站外，还挂了 11 个 🔞 线路站（`type: 1` 的 JSON 接口站，来自 `uzVideo/video_sources_sese.json`），和黄果脚本互不影响：黄果仍是第一个站点（默认打开），🔞 站点按 `sese_*` 独立 key 追加在后面，可在「站点」里切换，或在详情页/播放页用「换源」跨站找片。
 
 分类顺序对齐网页端导航：AI短剧 / AI漫剧 / 换脸专区 / 魔改专区（这四个带排序筛选）→ 吃瓜·全部 / 吃瓜·热门 / 吃瓜·AI原创 → 热播榜 / 推荐榜 / 潜力榜 → 加载源时自动追加的「专题·XX」（目前 9 个专辑专题）。
 
 ## 客户端用法
 
-配置地址（锁定 v6）：
+配置地址（锁定 v8）：
 
 ```
-https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v6/huangguo_web_spider_config.json
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v8/huangguo_web_spider_config.json
 ```
 
 前提：安卓 + FongMi + 已启用 QuickJS 模组（设置 → 模组）。
@@ -20,24 +20,26 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v6/huangguo_web_spider_config
 
 ## 合集版（黄果 + OmniBox 资源库）
 
-`all_sources_config.json` 把黄果本站、12 个 🔞 线路站，以及 `tianxiaxiao/omnibox-` 里的 57 个普通源 / 22 个成人源按接口去重后合成一份，共 83 个站点（重复的 9 个只留一次）。一条地址就能在同一个列表里换源找片：
+`all_sources_config.json` 把黄果本站、11 个 🔞 线路站，以及 `tianxiaxiao/omnibox-` 里的普通源 / 成人源按接口去重后合成一份，共 71 个站点（重复的只留一次）。一条地址就能在同一个列表里换源找片：
 
 ```
-https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v7/all_sources_config.json
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v8/all_sources_config.json
 ```
 
-`omnibox_sources_config.json` 是只含那 79 个源的独立版（不含黄果、不含 sese_*），不想混在一起时用。
+`omnibox_sources_config.json` 是只含 OmniBox 那 68 个源的独立版（不含黄果、不含 sese_*），不想混在一起时用。
 
-说明：那 79 个源在 OmniBox 仓库里是 `require("omnibox_sdk")` 的 js 写法，FongMi 的 QuickJS 没有这个模块、跑不了，所以这里取的是每个 js 里写死的采集接口 `SITE_API`，直接按 `type: 1` 用；`omnibox_链接.md` 里有原始的 js 直链（给 OmniBox 客户端用）。
+说明：那批源在 OmniBox 仓库里是 `require("omnibox_sdk")` 的 js 写法，FongMi 的 QuickJS 没有这个模块、跑不了，所以这里取的是每个 js 里写死的采集接口 `SITE_API`，直接按 `type: 1` 用；`omnibox_链接.md` 里有原始的 js 直链（给 OmniBox 客户端用）。
+
+v8 起：所有 `type: 1` 源都逐个实测过（`?ac=videolist&pg=1` 必须返回 JSON），返回 502 / 403 / 反爬 JS 页 / HTML 首页的 12 个源已删除，删掉的清单见 README 末尾。
 
 ## 文件
 
 - `huangguo_web_spider.js` — 爬虫脚本，入口常量 `API` 在第 15 行、站点常量 `SITE` 在第 16 行
-- `huangguo_web_spider_config.json` — 站点配置：第一个是黄果本站（`type: 3`，`api` 指向本仓库某个 tag 的脚本），后面 12 个是 🔞 `type: 1` JSON 接口站，可以整段删掉，不影响黄果
-- 🔞 站点清单（`sese_*`）：老鸭 / 淫水机 / 番号 / 155 / 鸡坤 / 黄AV / 香奶儿 / 美少女 / 白嫖 / 乐播 / 滴滴 / 精品。原始列表里同一站的 `/provide/vod/` 与 `/at/json` 两条内容重复，这里只留一条，避免站点列表里出现两个一模一样的名字
-- `all_sources_config.json` — 合集版：黄果 + 12 个 sese + 79 个 OmniBox 源（去重后 83 个站点），`key` 用 `sese_*` / `ob01`～`ob79`，与黄果的 `huangguo_web` 分开
-- `omnibox_sources_config.json` — 只含 OmniBox 那 79 个源的独立版
-- `omnibox_链接.md` — 那 79 个源在 `tianxiaxiao/omnibox-` 里的原始 js 直链（OmniBox SDK 格式，FongMi 不适用）
+- `huangguo_web_spider_config.json` — 站点配置：第一个是黄果本站（`type: 3`，`api` 指向本仓库某个 tag 的脚本），后面 11 个是 🔞 `type: 1` JSON 接口站，可以整段删掉，不影响黄果
+- 🔞 站点清单（`sese_*`）：淫水机 / 番号 / 155 / 鸡坤 / 黄AV / 香奶儿 / 美少女 / 白嫖 / 乐播 / 滴滴 / 精品（老鸭 v8 已删：源站 502）。原始列表里同一站的 `/provide/vod/` 与 `/at/json` 两条内容重复，这里只留一条，避免站点列表里出现两个一模一样的名字
+- `all_sources_config.json` — 合集版：黄果 + 11 个 sese + 68 个 OmniBox 源（去重后 71 个站点），`key` 用 `sese_*` / `ob01`～`ob68`，与黄果的 `huangguo_web` 分开
+- `omnibox_sources_config.json` — 只含 OmniBox 那 68 个源的独立版
+- `omnibox_链接.md` — 上游 `tianxiaxiao/omnibox-` 里 79 个源的原始 js 直链（OmniBox SDK 格式，FongMi 不适用；其中 11 个已失效）
 
 ## 首页推荐位
 
@@ -91,5 +93,26 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v7/all_sources_config.json
 - 每次都换新 tag 名，不要删掉重发同名 tag：jsdelivr 对 tag 内容近乎永久缓存，同名复用会一直拿到旧内容
 - 不要用 `@main` 当长期地址：分支缓存约 12 小时，改完不能立刻生效
 - 仓库必须保持 Public，jsdelivr 只服务公开仓库
-- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认最新的 `v7`
+- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认最新的 `v8`
 - 源站与 Worker 域名在部分网络下被污染，不开代理客户端会连不上数据源
+
+## v8 实测删除的源
+
+逐个请求 `{api}?ac=videolist&pg=1`（https 失败再试 http），返回非 JSON 或 4xx/5xx 的一律删掉：
+
+| 源 | 症状 |
+|---|---|
+| 老鸭资源 | 502 / TLS 握手失败 |
+| 细胞采集 | 502 / TLS 握手失败 |
+| 卧龙CC | 502 / TLS 握手失败 |
+| 茅台资源 | 502 / TLS 握手失败 |
+| 豆瓣资源 | 502 / TLS 握手失败 |
+| 百万资源 | 返回混淆过的反爬 JS 页面，不是 JSON |
+| 魔爪资源 | 返回混淆过的反爬 JS 页面，不是 JSON |
+| 卧龙资源 | 返回域名卡片页（域名已停），不是 JSON |
+| 卧龙采集 | 返回域名卡片页（域名已停），不是 JSON |
+| 旺旺API | 返回站点 HTML 首页，接口路径已失效 |
+| 旺旺短剧 | 返回站点 HTML 首页，接口路径已失效 |
+| 飘零资源 | 403 Forbidden |
+
+黄果本站走的是自己的 Worker（`/api/all` 实测 200），不在删除范围内；它依赖 QuickJS 模组，测不到的话先看模组有没有开。
