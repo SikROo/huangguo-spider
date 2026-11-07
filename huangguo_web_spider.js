@@ -9,6 +9,8 @@
 // 专辑专题（站点 /api/topics 与 /api/topics/{slug} 的 JSON）。
 // v5 修吃瓜播放：图文帖的直链在 /api/posts/{pid} 的 video_url（已签名 m3u8），
 // 原先只找 /api/detail 的 episodes 才取不到。
+// v5 同时去掉「精选推荐」分类：它的内容与首页推荐位同源（都是 /api/all 的 sections.recommend），
+// 客户端里会和「推荐」重复，首页推荐位仍保留。
 
 const API = 'https://huangguo-parser.13681235735.workers.dev'; // 可换成你自建的 Worker
 const SITE = 'https://huangguoai.com';
@@ -18,7 +20,6 @@ let BASE = API;
 
 // 分类顺序大致对应网页端导航：全部剧集 → 排行榜 → 专辑专题 → 黄果吃瓜
 const CLASSES = [
-  { type_id: 'recommend',   type_name: '精选推荐' },
   { type_id: 'ai-duanju',   type_name: 'AI短剧' },
   { type_id: 'ai-manju',    type_name: 'AI漫剧' },
   { type_id: 'ai-huanlian', type_name: '换脸专区' },
