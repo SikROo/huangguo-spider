@@ -11,15 +11,6 @@
       "changeable": 0
     },
     {
-      "key": "sese_laoya",
-      "name": "🔞老鸭资源",
-      "type": 1,
-      "api": "https://api.apilyzy.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
       "key": "sese_xrbsp",
       "name": "🔞淫水机资源",
       "type": 1,
