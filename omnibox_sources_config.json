@@ -127,28 +127,10 @@
       "filterable": 1
     },
     {
-      "key": "ob15",
-      "name": "🔞百万资源",
-      "type": 1,
-      "api": "https://api.bwzyz.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
       "key": "ob16",
       "name": "🔞精品资源",
       "type": 1,
       "api": "https://www.jingpinx.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob17",
-      "name": "🔞细胞采集",
-      "type": 1,
-      "api": "https://www.xxibaozyw.com/api.php/provide/vod/",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1
@@ -280,33 +262,6 @@
       "filterable": 1
     },
     {
-      "key": "ob32",
-      "name": "🔵卧龙CC",
-      "type": 1,
-      "api": "https://collect.wolongzy.cc/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob33",
-      "name": "🔵卧龙资源",
-      "type": 1,
-      "api": "https://wolongzyw.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob34",
-      "name": "🔵卧龙采集",
-      "type": 1,
-      "api": "https://collect.wolongzyw.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
       "key": "ob35",
       "name": "🔵天涯海角",
       "type": 1,
@@ -392,24 +347,6 @@
       "name": "🔵无尽资源ME",
       "type": 1,
       "api": "https://api.wujinapi.me/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob45",
-      "name": "🔵旺旺API",
-      "type": 1,
-      "api": "https://api.wwzy.tv/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob46",
-      "name": "🔵旺旺短剧",
-      "type": 1,
-      "api": "https://wwzy.tv/api.php/provide/vod/",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1
@@ -550,28 +487,10 @@
       "filterable": 1
     },
     {
-      "key": "ob62",
-      "name": "🔵茅台资源",
-      "type": 1,
-      "api": "https://caiji.maotaizy.cc/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
       "key": "ob63",
       "name": "🔵虎牙资源",
       "type": 1,
       "api": "https://www.huyaapi.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob64",
-      "name": "🔵豆瓣资源",
-      "type": 1,
-      "api": "https://dbzy.tv/api.php/provide/vod/",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1
@@ -653,24 +572,6 @@
       "name": "🔵非凡采集",
       "type": 1,
       "api": "https://cj.ffzyapi.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob74",
-      "name": "🔵飘零资源",
-      "type": 1,
-      "api": "https://p2100.net/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
-      "key": "ob75",
-      "name": "🔵魔爪资源",
-      "type": 1,
-      "api": "https://mozhuazy.com/api.php/provide/vod/",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1
