@@ -18,11 +18,26 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v6/huangguo_web_spider_config
 
 切换源：首页/设置里改「站点」可切到任意 🔞 线路站；看片时在详情页点「换源」或播放页点「线路 / 换源」跨站搜索同名影片。
 
+## 合集版（黄果 + OmniBox 资源库）
+
+`all_sources_config.json` 把黄果本站、12 个 🔞 线路站，以及 `tianxiaxiao/omnibox-` 里的 57 个普通源 / 22 个成人源按接口去重后合成一份，共 83 个站点（重复的 9 个只留一次）。一条地址就能在同一个列表里换源找片：
+
+```
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v7/all_sources_config.json
+```
+
+`omnibox_sources_config.json` 是只含那 79 个源的独立版（不含黄果、不含 sese_*），不想混在一起时用。
+
+说明：那 79 个源在 OmniBox 仓库里是 `require("omnibox_sdk")` 的 js 写法，FongMi 的 QuickJS 没有这个模块、跑不了，所以这里取的是每个 js 里写死的采集接口 `SITE_API`，直接按 `type: 1` 用；`omnibox_链接.md` 里有原始的 js 直链（给 OmniBox 客户端用）。
+
 ## 文件
 
 - `huangguo_web_spider.js` — 爬虫脚本，入口常量 `API` 在第 15 行、站点常量 `SITE` 在第 16 行
 - `huangguo_web_spider_config.json` — 站点配置：第一个是黄果本站（`type: 3`，`api` 指向本仓库某个 tag 的脚本），后面 12 个是 🔞 `type: 1` JSON 接口站，可以整段删掉，不影响黄果
 - 🔞 站点清单（`sese_*`）：老鸭 / 淫水机 / 番号 / 155 / 鸡坤 / 黄AV / 香奶儿 / 美少女 / 白嫖 / 乐播 / 滴滴 / 精品。原始列表里同一站的 `/provide/vod/` 与 `/at/json` 两条内容重复，这里只留一条，避免站点列表里出现两个一模一样的名字
+- `all_sources_config.json` — 合集版：黄果 + 12 个 sese + 79 个 OmniBox 源（去重后 83 个站点），`key` 用 `sese_*` / `ob01`～`ob79`，与黄果的 `huangguo_web` 分开
+- `omnibox_sources_config.json` — 只含 OmniBox 那 79 个源的独立版
+- `omnibox_链接.md` — 那 79 个源在 `tianxiaxiao/omnibox-` 里的原始 js 直链（OmniBox SDK 格式，FongMi 不适用）
 
 ## 首页推荐位
 
@@ -76,5 +91,5 @@ https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v6/huangguo_web_spider_config
 - 每次都换新 tag 名，不要删掉重发同名 tag：jsdelivr 对 tag 内容近乎永久缓存，同名复用会一直拿到旧内容
 - 不要用 `@main` 当长期地址：分支缓存约 12 小时，改完不能立刻生效
 - 仓库必须保持 Public，jsdelivr 只服务公开仓库
-- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认 `v6`
+- 仓库里有个误建的 `v3v3` 标签和同名 Release，内容与 `v3` 相同，忽略即可，请只认最新的 `v7`
 - 源站与 Worker 域名在部分网络下被污染，不开代理客户端会连不上数据源
