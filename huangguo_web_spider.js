@@ -7,6 +7,8 @@
 // 条目 id 形如 archives_123，直链不在 /api/play 里，改从 /api/detail 取。
 // v4 补齐网页端剩余入口：精选推荐（/api/all）、分类排序（含独家原创 sort=original）、
 // 专辑专题（站点 /api/topics 与 /api/topics/{slug} 的 JSON）。
+// v5 修吃瓜播放：图文帖的直链在 /api/posts/{pid} 的 video_url（已签名 m3u8），
+// 原先只找 /api/detail 的 episodes 才取不到。
 
 const API = 'https://huangguo-parser.13681235735.workers.dev'; // 可换成你自建的 Worker
 const SITE = 'https://huangguoai.com';
@@ -133,6 +135,18 @@ function archivesVideoId(pid) {
   const txt = String(d.data.content || '');
   const m = txt.match(/\/video\/(\d+)\//);
   return m ? String(m[1]) : '';
+}
+
+// 吃瓜帖正文接口 /api/posts/{pid} 里带 video_url（已签名的 m3u8，自带 auth_key，可直接播），
+// 这是图文帖唯一能拿到的正片地址；没有 video_url 时再从正文里找 .m3u8 链接。
+function archivesVideoUrl(pid) {
+  const d = getSiteJson('/api/posts/' + encodeURIComponent(pid));
+  if (!d || !d.data) return '';
+  const u = String(d.data.video_url || '');
+  if (/^https?:/i.test(u)) return u;
+  const c = String(d.data.content || '');
+  const m = c.match(/https?:\/\/[^\s"'<>]+\.m3u8[^\s"'<>]*/i);
+  return m ? m[0].replace(/&amp;/g, '&') : '';
 }
 
 function listPage(tid, page, sort) {
@@ -266,8 +280,8 @@ export default {
     // 吃瓜帖：Worker 的 detail 只在页面里能抓到 m3u8 时才给 episodes，
     // 抓不到时退回「正文里的 /video/{id}」，桥接到正片接口
     if (!eps.length && String(x.vod_id || '').indexOf('archives_') === 0) {
-      const vid = archivesVideoId(String(x.vod_id).replace('archives_', ''));
-      if (vid) eps = [{ ep: '1', url: '', title: '第1集' }];
+      const pid = String(x.vod_id).replace('archives_', '');
+      if (archivesVideoUrl(pid) || archivesVideoId(pid)) eps = [{ ep: '1', url: '', title: '第1集' }];
     }
     const playUrl = eps.map(function (e) {
       const n = String(e.ep || '1');
@@ -298,7 +312,17 @@ export default {
         if (/\.m3u8/i.test(uu)) out.format = 'application/vnd.apple.mpegurl';
         return JSON.stringify(out);
       }
-      // 回退：吃瓜帖正文里的 /video/{id} 就是正片，走普通播放接口
+      // 回退一：帖子接口里的 video_url（已签名的 m3u8），图文帖基本都有
+      const own = archivesVideoUrl(vid.replace('archives_', ''));
+      if (own) {
+        return JSON.stringify({
+          parse: 0,
+          url: own,
+          header: { 'User-Agent': UA, 'Referer': SITE + '/' },
+          format: 'application/vnd.apple.mpegurl'
+        });
+      }
+      // 回退二：吃瓜帖正文里的 /video/{id} 就是正片，走普通播放接口
       const target = archivesVideoId(vid.replace('archives_', ''));
       if (!target) return JSON.stringify({ parse: 0, url: '' });
       const pd = getJson('/api/play?url=' + encodeURIComponent(target) + '&ep=' + encodeURIComponent(ep));
