@@ -2,7 +2,7 @@
   "sites": [
     {
       "key": "huangguo_web",
-      "name": "黄果影院（接口版）",
+      "name": "黄果短剧",
       "type": 3,
       "api": "https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v6/huangguo_web_spider.js",
       "searchable": 1,
