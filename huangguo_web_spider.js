@@ -3,6 +3,8 @@
 // 与 huangguo-fongmi 的旧脚本相比：不抓页面 HTML、不依赖 assets 内置 crypto-js，
 // 全部走站点已公开的 JSON 接口，源站前端改版不会影响列表与解析。
 // 接口来源见 DRDRDRRDDRDR/huangguo-web 的 README。
+// v3 新增「黄果吃瓜」板块：/api/chigua?cate=all|remen|yuanchuang，
+// 条目 id 形如 archives_123，直链不在 /api/play 里，改从 /api/detail 取。
 
 const API = 'https://huangguo-parser.13681235735.workers.dev'; // 可换成你自建的 Worker
 const SITE = 'https://huangguoai.com';
@@ -15,6 +17,9 @@ const CLASSES = [
   { type_id: 'ai-manju',   type_name: 'AI漫剧' },
   { type_id: 'ai-huanlian', type_name: '换脸专区' },
   { type_id: 'ai-mogai',   type_name: '魔改专区' },
+  { type_id: 'chigua',            type_name: '吃瓜·全部' },
+  { type_id: 'chigua:remen',      type_name: '吃瓜·热门' },
+  { type_id: 'chigua:yuanchuang', type_name: '吃瓜·AI原创' },
   { type_id: 'rank:hot',      type_name: '热播榜' },
   { type_id: 'rank:recommend', type_name: '推荐榜' },
   { type_id: 'rank:potential', type_name: '潜力榜' }
@@ -65,6 +70,10 @@ function toVod(x) {
 function pageOf(tid, pg, sort) {
   const page = Math.max(1, parseInt(pg || '1', 10) || 1);
   const size = 50;
+  if (String(tid).indexOf('chigua') === 0) {
+    const cate = String(tid).split(':')[1] || 'all';
+    return getJson('/api/chigua?cate=' + encodeURIComponent(cate) + '&page=' + page + '&size=' + size);
+  }
   if (String(tid).indexOf('rank:') === 0) {
     const kind = String(tid).slice(5) || 'hot';
     return getJson('/api/ranks/' + kind + '?page=' + page + '&size=' + size);
@@ -95,12 +104,13 @@ export default {
     try { if (extend && extend.sort) sort = String(extend.sort); } catch (e) {}
     const d = pageOf(String(tid || 'ai-duanju'), page, sort);
     const list = d && Array.isArray(d.list) ? d.list : [];
+    const pages = d && d.pagecount ? Number(d.pagecount) : (list.length ? page + 1 : page);
     return JSON.stringify({
       list: list.map(toVod),
       page: page,
-      pagecount: list.length ? page + 1 : page,
+      pagecount: pages,
       limit: list.length,
-      total: list.length ? (page + 1) * list.length : 0
+      total: d && d.total ? Number(d.total) : (pages * list.length)
     });
   },
 
@@ -143,6 +153,19 @@ export default {
     const vid = (parts[0] || '').trim();
     const ep = (parts.length > 1 ? parts[1] : '1') || '1';
     if (!vid) return JSON.stringify({ parse: 0, url: '' });
+
+    // 吃瓜条目（archives_ 前缀）：/api/play 不认这种 id，直链在 /api/detail 的 episodes[0].url
+    if (vid.indexOf('archives_') === 0) {
+      const dd = getJson('/api/detail/' + encodeURIComponent(vid));
+      const xx = dd && Array.isArray(dd.list) && dd.list.length ? dd.list[0] : null;
+      const ee = xx && Array.isArray(xx.episodes) ? xx.episodes : [];
+      const uu = ee.length ? String(ee[0].url || '') : '';
+      if (!uu) return JSON.stringify({ parse: 0, url: '' });
+      const out = { parse: 0, url: uu, header: { 'User-Agent': UA, 'Referer': SITE + '/' } };
+      if (/\.m3u8/i.test(uu)) out.format = 'application/vnd.apple.mpegurl';
+      return JSON.stringify(out);
+    }
+
     const d = getJson('/api/play?url=' + encodeURIComponent(vid) + '&ep=' + encodeURIComponent(ep));
     if (!d || !d.url) return JSON.stringify({ parse: 0, url: '' });
     // 优先直连原始 m3u8：源站按出口 IP 下发片源，走代理只能拿到预览片段
