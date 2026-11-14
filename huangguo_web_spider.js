@@ -16,6 +16,7 @@
 //     5 分钟窗口），否则 403，列表/详情/播放全空。这里内置纯 JS SHA-256/HMAC 自己签名。
 //   - 吃瓜板块：Worker 的 /api/chigua 已失效（pagecount 有值但 list 恒空），改读源站 /api/posts。
 //   - 封面：Worker /api/all 返回的是 /media?url=... 相对路径，picOf 补全成 Worker 绝对地址（无需签名）。
+// v10.3：源站把「换脸专区 / 魔改专区」下线了（HTTP 410 内容已下线），分类列表里去掉这两项，避免点进去全空。
 
 const API = 'https://huangguo-parser.13681235735.workers.dev'; // 可换成你自建的 Worker
 const SITE = 'https://huangguoai.com';
@@ -122,8 +123,10 @@ function hgHmacHex(keyStr, msgStr) {
 const CLASSES = [
   { type_id: 'ai-duanju',   type_name: 'AI短剧' },
   { type_id: 'ai-manju',    type_name: 'AI漫剧' },
-  { type_id: 'ai-huanlian', type_name: '换脸专区' },
-  { type_id: 'ai-mogai',    type_name: '魔改专区' },
+  // 换脸专区(ai-huanlian)、魔改专区(ai-mogai) 源站已 410「内容已下线」，先移除；
+  // 恢复时把这两行加回来即可：
+  //   { type_id: 'ai-huanlian', type_name: '换脸专区' },
+  //   { type_id: 'ai-mogai',    type_name: '魔改专区' },
   { type_id: 'chigua',            type_name: '吃瓜·全部' },
   { type_id: 'chigua:remen',      type_name: '吃瓜·热门' },
   { type_id: 'chigua:yuanchuang', type_name: '吃瓜·AI原创' },
@@ -143,9 +146,7 @@ const SORTS = [
 const SORT_FILTER = [{ key: 'sort', name: '排序', value: SORTS.map(function (s) { return { n: s.n, v: s.v }; }) }];
 const FILTERS = {
   'ai-duanju': SORT_FILTER,
-  'ai-manju': SORT_FILTER,
-  'ai-huanlian': SORT_FILTER,
-  'ai-mogai': SORT_FILTER
+  'ai-manju': SORT_FILTER
 };
 
 function reqJson(url) {
