@@ -43,13 +43,13 @@ function reqJson(url, method, body) {
   try {
     var opts = {
       method: method || 'get',
-      headers: { 'User-Agent': UA, 'Referer': SITE + '/', 'Content-Type': 'application/json' },
+      headers: { 'User-Agent': UA, 'Referer': SITE + '/' },
       timeout: 15000
     };
     if (body !== undefined && body !== null) {
-      var s = (typeof body === 'string') ? body : JSON.stringify(body);
-      opts.body = s;      // CatVod/FongMi 标准字段
-      opts.data = s;      // 兼容旧版/部分分支字段
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = (typeof body === 'string') ? body : JSON.stringify(body);
+      opts.data = opts.body; // 兼容旧版分支
     }
     var r = req(url, opts);
     if (!r || Number(r.code) !== 200 || !r.content) return null;
