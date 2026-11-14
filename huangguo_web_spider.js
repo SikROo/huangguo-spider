@@ -16,9 +16,12 @@
 //     5 分钟窗口），否则 403，列表/详情/播放全空。这里内置纯 JS SHA-256/HMAC 自己签名。
 //   - 吃瓜板块：Worker 的 /api/chigua 已失效（pagecount 有值但 list 恒空），改读源站 /api/posts。
 //   - 封面：Worker /api/all 返回的是 /media?url=... 相对路径，picOf 补全成 Worker 绝对地址（无需签名）。
+// v10.2：吃瓜回退源站时两个域名（.com/.io）都试、5 秒超时；列表依次试 /api/posts 与 /api/feed/recommend。
 
 const API = 'https://huangguo-parser.13681235735.workers.dev'; // 可换成你自建的 Worker
 const SITE = 'https://huangguoai.com';
+// 源站 2026-11 的主域名是 huangguoai.io；.com 在部分网络下被 DNS 污染，两个都试
+const SITE_ALT = 'https://huangguoai.io';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 let BASE = API;
@@ -148,7 +151,7 @@ const FILTERS = {
   'ai-mogai': SORT_FILTER
 };
 
-function reqJson(url) {
+function reqJson(url, timeoutMs) {
   const u = String(url || '');
   const signed = u.indexOf(BASE) === 0;
   const pathWithQuery = signed ? u.slice(BASE.length) : '';
@@ -164,7 +167,7 @@ function reqJson(url) {
       headers['X-HG-Sig'] = hgHmacHex(HG_SECRET, win + '\n' + pathWithQuery);
     }
     try {
-      const r = req(u, { method: 'get', headers: headers, timeout: 15000 });
+      const r = req(u, { method: 'get', headers: headers, timeout: timeoutMs || 15000 });
       if (!r || !r.content) continue;
       const code = Number(r.code);
       if (code === 200) {
@@ -187,7 +190,10 @@ function getJson(path) {
 
 // 站点原生 JSON（专辑专题等 Worker 未转发的接口，只能直连源站）
 function getSiteJson(path) {
-  return reqJson(SITE + path);
+  // 源站直连：5 秒超时就换域名/放弃，避免分类页卡死（Worker 反代不了这些路径）
+  let d = reqJson(SITE + path, 5000);
+  if (d) return d;
+  return reqJson(SITE_ALT + path, 5000);
 }
 
 function picOf(u) {
@@ -312,13 +318,23 @@ function listPage(tid, page, sort) {
     pages = d && d.pagecount ? Number(d.pagecount) : (list.length ? p + 1 : p);
     total = d && d.total ? Number(d.total) : (pages * list.length);
     if (!list.length) {
-      // Worker 的吃瓜抓取已失效，回退源站 /api/posts（id 补 archives_ 以复用吃瓜播放分支）
-      const s = getSiteJson('/api/posts?cate=' + encodeURIComponent(cate) + '&page=' + p + '&size=' + size);
-      const items = s && s.data && Array.isArray(s.data.items) ? s.data.items : [];
-      list = items.map(toPostVod);
-      const pg2 = s && s.data && s.data.pagination ? s.data.pagination : null;
-      pages = pg2 && pg2.pages ? Number(pg2.pages) : (list.length ? p + 1 : p);
-      total = pg2 && pg2.total ? Number(pg2.total) : (list.length ? pages * list.length : 0);
+      // Worker 的吃瓜抓取已失效（pagecount 有值但 list 恒空），回退源站：
+      //   /api/posts?cate=    —— 吃瓜帖列表（全部/热门/AI原创）
+      //   /api/feed/recommend —— 首页信息流，前一个不行时兜底
+      const paths = [
+        '/api/posts?cate=' + encodeURIComponent(cate) + '&page=' + p + '&size=' + size,
+        '/api/feed/recommend?page=' + p + '&size=' + size
+      ];
+      for (let i = 0; i < paths.length; i++) {
+        const s = getSiteJson(paths[i]);
+        const items = s && s.data && Array.isArray(s.data.items) ? s.data.items : [];
+        if (!items.length) continue;
+        list = items.map(toPostVod);
+        const pg2 = s.data.pagination || null;
+        pages = pg2 && pg2.pages ? Number(pg2.pages) : p + 1;
+        total = pg2 && pg2.total ? Number(pg2.total) : pages * list.length;
+        break;
+      }
     }
   } else if (String(tid).indexOf('rank:') === 0) {
     const kind = String(tid).slice(5) || 'hot';
