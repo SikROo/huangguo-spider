@@ -7,7 +7,7 @@
 合集（推荐，71 站）：
 
 ```
-https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v10/all_sources_config.json
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v11.4/all_sources_config.json
 ```
 
 | 配置 | 站点数 | 内容 |
