@@ -4,24 +4,15 @@
       "key": "huangguo_web",
       "name": "黄果短剧",
       "type": 3,
-      "api": "https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v11.3/huangguo_web_spider.js",
+      "api": "https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v11/huangguo_web_spider.js",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1,
       "changeable": 0
     },
     {
-      "key": "sese_laoya",
-      "name": "🔞老鸭资源",
-      "type": 1,
-      "api": "https://api.apilyzy.com/api.php/provide/vod/",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1
-    },
-    {
       "key": "sese_xrbsp",
-      "name": "🔞淫水机资源",
+      "name": "🔞淫水机资源⭐",
       "type": 1,
       "api": "https://www.xrbsp.com/api/json.php",
       "searchable": 1,
@@ -57,16 +48,16 @@
     },
     {
       "key": "sese_pgxdy",
-      "name": "🔞黄AV资源",
+      "name": "🔞黄AV资源⭐",
       "type": 1,
-      "api": "http://www.pgxdy.com/api/json.php",
+      "api": "https://www.pgxdy.com/api/json.php",
       "searchable": 1,
       "quickSearch": 1,
       "filterable": 1
     },
     {
       "key": "sese_gdlsp",
-      "name": "🔞香奶儿资源",
+      "name": "🔞香奶儿资源⭐",
       "type": 1,
       "api": "https://www.gdlsp.com/api/json.php",
       "searchable": 1,
@@ -75,7 +66,7 @@
     },
     {
       "key": "sese_msnii",
-      "name": "🔞美少女资源",
+      "name": "🔞美少女资源⭐",
       "type": 1,
       "api": "https://www.msnii.com/api/json.php",
       "searchable": 1,
@@ -84,7 +75,7 @@
     },
     {
       "key": "sese_kxgav",
-      "name": "🔞白嫖资源",
+      "name": "🔞白嫖资源⭐",
       "type": 1,
       "api": "https://www.kxgav.com/api/json.php",
       "searchable": 1,
@@ -93,7 +84,7 @@
     },
     {
       "key": "sese_lebo",
-      "name": "🔞乐播资源",
+      "name": "🔞乐播资源⭐",
       "type": 1,
       "api": "https://lbapi9.com/api.php/provide/vod/",
       "searchable": 1,
@@ -111,7 +102,7 @@
     },
     {
       "key": "sese_jingpin",
-      "name": "🔞精品资源",
+      "name": "🔞精品资源⭐",
       "type": 1,
       "api": "https://www.jingpinx.com/api.php/provide/vod/",
       "searchable": 1,
