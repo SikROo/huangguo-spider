@@ -69,9 +69,14 @@ function postJson(path, body) {
   return reqJson(BASE + path, 'post', body || {});
 }
 
-// 新接口 cover 已是完整 https://pic.drleao.cn/...?auth_key=... 签名 URL，直接用
+// 新接口 cover 是完整签名 URL（pic.drleao.cn），但 Content-Type 是 binary/octet-stream，
+// FongMi 不识别，通过图片代理中转强制返回 image/jpeg
 function picOf(u) {
-  return String(u || '');
+  u = String(u || '');
+  if (!u) return '';
+  // 用 images.weserv.nl 公共图片代理，自动识别图片类型
+  if (/^https?:\/\//i.test(u)) return 'https://images.weserv.nl/?url=' + encodeURIComponent(u);
+  return u;
 }
 
 function toVod(x) {
