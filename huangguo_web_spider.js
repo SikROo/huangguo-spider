@@ -11,12 +11,112 @@
 // 原先只找 /api/detail 的 episodes 才取不到。
 // v5 同时去掉「精选推荐」分类：它的内容与首页推荐位同源（都是 /api/all 的 sections.recommend），
 // 客户端里会和「推荐」重复，首页推荐位仍保留。
+// v10.1（在 v10 上修）：
+//   - Worker 2026-11-13 加了反爬：必须带 Origin/Referer + X-HG-Ts/X-HG-Sig（HMAC-SHA256，
+//     5 分钟窗口），否则 403，列表/详情/播放全空。这里内置纯 JS SHA-256/HMAC 自己签名。
+//   - 吃瓜板块：Worker 的 /api/chigua 已失效（pagecount 有值但 list 恒空），改读源站 /api/posts。
+//   - 封面：Worker /api/all 返回的是 /media?url=... 相对路径，picOf 补全成 Worker 绝对地址（无需签名）。
 
 const API = 'https://huangguo-parser.13681235735.workers.dev'; // 可换成你自建的 Worker
 const SITE = 'https://huangguoai.com';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 let BASE = API;
+
+// ===== Worker 反爬签名（纯 JS，不依赖运行时 crypto 模块）=====
+// 2026-11-13 起 Worker 要求：Origin/Referer 必须是站点来源，且带
+// X-HG-Ts（5 分钟窗口起始 epoch 秒）与 X-HG-Sig = HMAC-SHA256(secret, win + "\n" + "/api" + path)。
+// 缺任一项返回 403（reason: ua / sig:missing），列表、详情、播放全部拿不到数据。
+const HG_SECRET = 'hg-dx150-2026-11-w7Qm4pLz';
+const HG_ORIGIN = 'https://drdrdrrddrdr.github.io';
+const HG_REFERER = 'https://drdrdrrddrdr.github.io/huangguo-web/';
+
+var HG_K = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+];
+
+function hgRotr(x, n) { return (x >>> n) | (x << (32 - n)); }
+
+function hgUtf8Bytes(s) {
+  const out = [];
+  for (let i = 0; i < s.length; i++) {
+    let c = s.charCodeAt(i);
+    if (c < 0x80) out.push(c);
+    else if (c < 0x800) out.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+    else if (c < 0xD800 || c >= 0xE000) out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+    else {
+      i++;
+      const c2 = s.charCodeAt(i);
+      const cp = 0x10000 + ((c & 0x3FF) << 10) + (c2 & 0x3FF);
+      out.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+    }
+  }
+  return out;
+}
+
+function hgSha256(bytes) {
+  const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+  const msg = bytes.slice(0);
+  const len = bytes.length;
+  const bitLo = (len * 8) >>> 0;
+  const bitHi = Math.floor(len / 536870912) >>> 0;
+  msg.push(0x80);
+  while (msg.length % 64 !== 56) msg.push(0);
+  msg.push((bitHi >>> 24) & 255, (bitHi >>> 16) & 255, (bitHi >>> 8) & 255, bitHi & 255);
+  msg.push((bitLo >>> 24) & 255, (bitLo >>> 16) & 255, (bitLo >>> 8) & 255, bitLo & 255);
+
+  const W = new Array(64);
+  for (let off = 0; off < msg.length; off += 64) {
+    for (let i = 0; i < 16; i++) {
+      W[i] = ((msg[off + i * 4] << 24) | (msg[off + i * 4 + 1] << 16) | (msg[off + i * 4 + 2] << 8) | msg[off + i * 4 + 3]) | 0;
+    }
+    for (let i = 16; i < 64; i++) {
+      const s0 = hgRotr(W[i - 15], 7) ^ hgRotr(W[i - 15], 18) ^ (W[i - 15] >>> 3);
+      const s1 = hgRotr(W[i - 2], 17) ^ hgRotr(W[i - 2], 19) ^ (W[i - 2] >>> 10);
+      W[i] = (W[i - 16] + s0 + W[i - 7] + s1) | 0;
+    }
+    let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (let i = 0; i < 64; i++) {
+      const S1 = hgRotr(e, 6) ^ hgRotr(e, 11) ^ hgRotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + HG_K[i] + W[i]) | 0;
+      const S0 = hgRotr(a, 2) ^ hgRotr(a, 13) ^ hgRotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+
+  const out = [];
+  for (let i = 0; i < 8; i++) out.push((H[i] >>> 24) & 255, (H[i] >>> 16) & 255, (H[i] >>> 8) & 255, H[i] & 255);
+  return out;
+}
+
+function hgHmacHex(keyStr, msgStr) {
+  let key = hgUtf8Bytes(keyStr);
+  if (key.length > 64) key = hgSha256(key);
+  while (key.length < 64) key.push(0);
+  const ipad = [], opad = [];
+  for (let i = 0; i < 64; i++) { ipad.push(key[i] ^ 0x36); opad.push(key[i] ^ 0x5c); }
+  const inner = hgSha256(ipad.concat(hgUtf8Bytes(msgStr)));
+  const outer = hgSha256(opad.concat(inner));
+  let hex = '';
+  for (let i = 0; i < outer.length; i++) {
+    const t = outer[i].toString(16);
+    hex += t.length === 1 ? '0' + t : t;
+  }
+  return hex;
+}
+
 
 // 分类顺序大致对应网页端导航：全部剧集 → 排行榜 → 专辑专题 → 黄果吃瓜
 const CLASSES = [
@@ -49,17 +149,35 @@ const FILTERS = {
 };
 
 function reqJson(url) {
-  try {
-    const r = req(url, {
-      method: 'get',
-      headers: { 'User-Agent': UA, 'Referer': SITE + '/' },
-      timeout: 15000
-    });
-    if (!r || Number(r.code) !== 200 || !r.content) return null;
-    return JSON.parse(String(r.content));
-  } catch (e) {
-    return null;
+  const u = String(url || '');
+  const signed = u.indexOf(BASE) === 0;
+  const pathWithQuery = signed ? u.slice(BASE.length) : '';
+  // 手机时钟可能偏几分钟，403 时换相邻时间窗重试；再对丢连接重试一次
+  const shifts = signed ? [0, -1, 1] : [0, 0];
+  for (let i = 0; i < shifts.length; i++) {
+    const headers = { 'User-Agent': UA, 'Accept': 'application/json, text/plain, */*', 'Referer': SITE + '/' };
+    if (signed) {
+      const win = Math.floor(Date.now() / 1000 / 300) + shifts[i];
+      headers['Origin'] = HG_ORIGIN;
+      headers['Referer'] = HG_REFERER;
+      headers['X-HG-Ts'] = String(win * 300);
+      headers['X-HG-Sig'] = hgHmacHex(HG_SECRET, win + '\n' + pathWithQuery);
+    }
+    try {
+      const r = req(u, { method: 'get', headers: headers, timeout: 15000 });
+      if (!r || !r.content) continue;
+      const code = Number(r.code);
+      if (code === 200) {
+        try {
+          return JSON.parse(String(r.content));
+        } catch (e) {
+          return null;
+        }
+      }
+      if (!signed || (code !== 403 && code !== 401)) return null;
+    } catch (e) {}
   }
+  return null;
 }
 
 // Worker 上的接口（走 BASE，可换自建代理）
@@ -109,6 +227,21 @@ function toSiteVod(x) {
     vod_content: String(x.description || ''),
     vod_actor: '',
     type_name: ''
+  };
+}
+
+// 源站 /api/posts 的吃瓜帖 → FongMi vod（id 是数字，前面补 archives_ 以复用吃瓜播放分支）
+function toPostVod(x) {
+  return {
+    vod_id: 'archives_' + String(x.id || ''),
+    vod_name: String(x.title || ''),
+    vod_pic: picOf(x.cover || ''),
+    vod_remarks: String(x.created_at || ''),
+    vod_year: '',
+    vod_score: '',
+    vod_content: String(x.desc || ''),
+    vod_actor: '',
+    type_name: '吃瓜'
   };
 }
 
@@ -178,6 +311,15 @@ function listPage(tid, page, sort) {
     list = d && Array.isArray(d.list) ? d.list.map(toVod) : [];
     pages = d && d.pagecount ? Number(d.pagecount) : (list.length ? p + 1 : p);
     total = d && d.total ? Number(d.total) : (pages * list.length);
+    if (!list.length) {
+      // Worker 的吃瓜抓取已失效，回退源站 /api/posts（id 补 archives_ 以复用吃瓜播放分支）
+      const s = getSiteJson('/api/posts?cate=' + encodeURIComponent(cate) + '&page=' + p + '&size=' + size);
+      const items = s && s.data && Array.isArray(s.data.items) ? s.data.items : [];
+      list = items.map(toPostVod);
+      const pg2 = s && s.data && s.data.pagination ? s.data.pagination : null;
+      pages = pg2 && pg2.pages ? Number(pg2.pages) : (list.length ? p + 1 : p);
+      total = pg2 && pg2.total ? Number(pg2.total) : (list.length ? pages * list.length : 0);
+    }
   } else if (String(tid).indexOf('rank:') === 0) {
     const kind = String(tid).slice(5) || 'hot';
     d = getJson('/api/ranks/' + kind + '?page=' + p + '&size=' + size);
@@ -275,7 +417,21 @@ export default {
     id = String(id || '').trim();
     if (!id) return JSON.stringify({ list: [] });
     const d = getJson('/api/detail/' + encodeURIComponent(id));
-    const x = d && Array.isArray(d.list) && d.list.length ? d.list[0] : null;
+    let x = d && Array.isArray(d.list) && d.list.length ? d.list[0] : null;
+    if (!x && id.indexOf('archives_') === 0) {
+      const s = getSiteJson('/api/posts/' + encodeURIComponent(id.replace('archives_', '')));
+      const pd = s && s.data ? s.data : null;
+      if (pd && (pd.title || pd.content)) {
+        x = {
+          vod_id: id,
+          vod_name: String(pd.title || ''),
+          vod_pic: pd.cover || '',
+          vod_remarks: String(pd.created_at || ''),
+          vod_content: String(pd.content || ''),
+          episodes: []
+        };
+      }
+    }
     if (!x) return JSON.stringify({ list: [] });
     let eps = Array.isArray(x.episodes) ? x.episodes : [];
     // 吃瓜帖：Worker 的 detail 只在页面里能抓到 m3u8 时才给 episodes，
