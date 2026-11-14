@@ -17,6 +17,7 @@
 //   - 吃瓜板块：Worker 的 /api/chigua 已失效（pagecount 有值但 list 恒空），改读源站 /api/posts。
 //   - 封面：Worker /api/all 返回的是 /media?url=... 相对路径，picOf 补全成 Worker 绝对地址（无需签名）。
 // v10.3：源站把「换脸专区 / 魔改专区」下线了（HTTP 410 内容已下线），分类列表里去掉这两项，避免点进去全空。
+// v10.4：吃瓜帖播放——视频挂在 POST /api/posts/{pid}/playback 的 data.videos[] 里，旧逻辑只找 detail.episodes（恒为空）所以播不了；现在按 videos 生成分集并直接取地址。
 
 const API = 'https://huangguo-parser.13681235735.workers.dev'; // 可换成你自建的 Worker
 const SITE = 'https://huangguoai.com';
@@ -149,7 +150,7 @@ const FILTERS = {
   'ai-manju': SORT_FILTER
 };
 
-function reqJson(url) {
+function reqJson(url, method, body) {
   const u = String(url || '');
   const signed = u.indexOf(BASE) === 0;
   const pathWithQuery = signed ? u.slice(BASE.length) : '';
@@ -165,7 +166,14 @@ function reqJson(url) {
       headers['X-HG-Sig'] = hgHmacHex(HG_SECRET, win + '\n' + pathWithQuery);
     }
     try {
-      const r = req(u, { method: 'get', headers: headers, timeout: 15000 });
+      const opts = { method: method || 'get', headers: headers, timeout: 15000 };
+      if (body !== undefined && body !== null) {
+        const payload = (typeof body === 'string') ? body : JSON.stringify(body);
+        opts.headers['Content-Type'] = 'application/json';
+        opts.body = payload;
+        opts.data = payload;
+      }
+      const r = req(u, opts);
       if (!r || !r.content) continue;
       const code = Number(r.code);
       if (code === 200) {
@@ -282,6 +290,43 @@ function archivesVideoUrl(pid) {
   const c = String(d.data.content || '');
   const m = c.match(/https?:\/\/[^\s"'<>]+\.m3u8[^\s"'<>]*/i);
   return m ? m[0].replace(/&amp;/g, '&') : '';
+}
+
+// 吃瓜帖的视频地址：POST /api/posts/{pid}/playback，body 必须是「空对象」，
+// 返回 data.videos[{index,url}]，一个帖子可能挂多个视频。
+function postSiteJson(path, body) {
+  return reqJson(SITE + path, 'post', body);
+}
+
+function postVideos(pid) {
+  const d = postSiteJson('/api/posts/' + encodeURIComponent(pid) + '/playback', {});
+  if (!d || !d.data || !Array.isArray(d.data.videos)) return [];
+  const cdn = d.data.cdn || {};
+  const out = [];
+  for (let i = 0; i < d.data.videos.length; i++) {
+    const v = d.data.videos[i];
+    if (!v || !v.url) continue;
+    out.push({ index: Number(v.index === undefined ? i : v.index), url: String(v.url), cdn: cdn });
+  }
+  return out;
+}
+
+function pickPostVideo(list, ep) {
+  const n = Math.max(1, parseInt(ep || '1', 10) || 1);
+  for (let i = 0; i < list.length; i++) {
+    if (Number(list[i].index) === n - 1) return list[i];
+  }
+  return list[n - 1] || list[0] || null;
+}
+
+function postPlay(v) {
+  const header = { 'User-Agent': UA, 'Referer': SITE + '/' };
+  const cdn = v.cdn || {};
+  if (cdn.authKey && cdn.authValue) header[String(cdn.authKey)] = String(cdn.authValue);
+  if (cdn.app) header['x-cdn-app'] = String(cdn.app);
+  const out = { parse: 0, url: v.url, header: header };
+  if (/\.m3u8/i.test(v.url)) out.format = 'application/vnd.apple.mpegurl';
+  return out;
 }
 
 function listPage(tid, page, sort) {
@@ -435,6 +480,15 @@ export default {
     }
     if (!x) return JSON.stringify({ list: [] });
     let eps = Array.isArray(x.episodes) ? x.episodes : [];
+    // 吃瓜帖：视频在 /api/posts/{pid}/playback 里，按 videos 数目生成分集
+    if (id.indexOf('archives_') === 0) {
+      const pv = postVideos(id.replace('archives_', ''));
+      if (pv.length) {
+        eps = pv.map(function (v, i) {
+          return { ep: String(i + 1), title: '视频' + (i + 1), url: v.url };
+        });
+      }
+    }
     // 吃瓜帖：Worker 的 detail 只在页面里能抓到 m3u8 时才给 episodes，
     // 抓不到时退回「正文里的 /video/{id}」，桥接到正片接口
     if (!eps.length && String(x.vod_id || '').indexOf('archives_') === 0) {
@@ -461,6 +515,10 @@ export default {
 
     // 吃瓜条目（archives_ 前缀）：/api/play 不认这种 id，直链在 /api/detail 的 episodes[0].url
     if (vid.indexOf('archives_') === 0) {
+      // 优先走源站的帖子播放接口（Worker 的 detail 对这些帖子恒返回 0 集）
+      const pv = postVideos(vid.replace('archives_', ''));
+      const first = pickPostVideo(pv, ep);
+      if (first) return JSON.stringify(postPlay(first));
       const dd = getJson('/api/detail/' + encodeURIComponent(vid));
       const xx = dd && Array.isArray(dd.list) && dd.list.length ? dd.list[0] : null;
       const ee = xx && Array.isArray(xx.episodes) ? xx.episodes : [];
