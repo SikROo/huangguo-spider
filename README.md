@@ -8,13 +8,13 @@
 
 ## 客户端用法
 
-配置地址（锁定 v10.3）：
+配置地址（锁定 v10.4）：
 
 ```
-https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v10.3/huangguo_web_spider_config.json
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v10.4/huangguo_web_spider_config.json
 ```
 
-v10.3：源站把「换脸专区 / 魔改专区」下线了（HTTP 410），分类里已去掉这两项；另 Worker 从 2026-11-13 起要求 Origin/Referer + HMAC 签名，旧版会被 403 挡掉，导致分类下全空；另外吃瓜板块改读源站 /api/posts，封面走 Worker /media。
+v10.4：源站把「换脸专区 / 魔改专区」下线了（HTTP 410），分类里已去掉这两项；另 Worker 从 2026-11-13 起要求 Origin/Referer + HMAC 签名，旧版会被 403 挡掉，导致分类下全空；另外吃瓜板块改读源站 /api/posts，封面走 Worker /media。
 
 **站点名带 ⭐ = 不挂 VPN 也能直连**（实测直连返回正常 JSON）；不带 ⭐ = 需要挂 VPN 才连得上。黄果本站走 Cloudflare Worker，国内直连不通，所以没有 ⭐。
 
@@ -27,7 +27,7 @@ v10.3：源站把「换脸专区 / 魔改专区」下线了（HTTP 410），分�
 `all_sources_config.json` 把黄果本站、JP98 资源、11 个 🔞 线路站，以及 `tianxiaxiao/omnibox-` 里的普通源 / 成人源按接口去重后合成一份，共 71 个站点（重复的只留一次；`http` 和 `https` 同一条接口的也合并成 `https` 那条）。一条地址就能在同一个列表里换源找片：
 
 ```
-https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v10.3/all_sources_config.json
+https://cdn.jsdelivr.net/gh/SikROo/huangguo-spider@v10.4/all_sources_config.json
 ```
 
 `omnibox_sources_config.json` 是只含 OmniBox 那 68 个源的独立版（不含黄果、不含 sese_*），不想混在一起时用。
